@@ -97,6 +97,30 @@ def inicializar(db_path=None):
         CREATE INDEX IF NOT EXISTS idx_teses_acordao ON teses(acordao_id);
         CREATE INDEX IF NOT EXISTS idx_teses_categoria ON teses(categoria);
 
+        -- Pareceres e Notas Técnicas do e-NatJus (CNJ)
+        CREATE TABLE IF NOT EXISTS natjus_pareceres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            natjus_id INTEGER,              -- ID no sistema e-NatJus
+            tipo TEXT NOT NULL,             -- 'parecer' ou 'nota_tecnica'
+            data_publicacao TEXT,
+            titulo TEXT,                    -- Intervenção/tecnologia estudada
+            cid TEXT,                       -- Código CID (F84, C50, etc.)
+            cid_descricao TEXT,             -- Descrição do CID
+            tipo_tecnologia TEXT,           -- Medicamento, Procedimento, Produto
+            natjus_origem TEXT,             -- UF ou Nacional
+            status TEXT,                    -- Finalizado, Em andamento
+            conclusao TEXT,                 -- Favorável, Desfavorável, etc.
+            arquivo_hash TEXT,              -- Hash do PDF para download
+            arquivo_local TEXT,             -- Caminho local do PDF baixado
+            tema TEXT,                      -- Classificado nos 14 temas
+            importado_em TEXT DEFAULT (datetime('now')),
+            UNIQUE(natjus_id, tipo)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_natjus_cid ON natjus_pareceres(cid);
+        CREATE INDEX IF NOT EXISTS idx_natjus_tema ON natjus_pareceres(tema);
+        CREATE INDEX IF NOT EXISTS idx_natjus_tipo ON natjus_pareceres(tipo);
+
         -- FTS (Full-Text Search) para buscas em ementas
         CREATE VIRTUAL TABLE IF NOT EXISTS acordaos_fts USING fts5(
             ementa,

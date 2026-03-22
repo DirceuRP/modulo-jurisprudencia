@@ -230,69 +230,76 @@ class JurisprudenciaConsulta:
     # GERAÇÃO DE CITAÇÃO
     # ==========================================
 
-    def gerar_citacao(self, acordao_id, formato="petição"):
+    def gerar_citacao(self, acordao_id_or_dict, formato="petição"):
         """
         Gera citação formatada de um acórdão para uso em petições.
 
         Args:
-            acordao_id: ID do acórdão na base
+            acordao_id_or_dict: ID do acórdão na base OU dict retornado por buscar()
             formato: "petição" (padrão ABNT jurídico) ou "texto"
 
         Returns:
             string formatada pronta para colar na petição
         """
-        conn = self._conn()
-        try:
-            row = conn.execute("""
-                SELECT numero_processo, tribunal, orgao_julgador, relator,
-                       data_julgamento, classe_processual, ementa
-                FROM acordaos WHERE id = ?
-            """, (acordao_id,)).fetchone()
+        # Aceitar tanto ID quanto dict
+        if isinstance(acordao_id_or_dict, dict):
+            row = acordao_id_or_dict
+        else:
+            conn = self._conn()
+            try:
+                row = conn.execute("""
+                    SELECT numero_processo, tribunal, orgao_julgador, relator,
+                           data_julgamento, classe_processual, ementa
+                    FROM acordaos WHERE id = ?
+                """, (acordao_id_or_dict,)).fetchone()
+            finally:
+                conn.close()
 
             if not row:
                 return None
+            row = dict(row)
 
-            proc = row["numero_processo"]
-            trib = row["tribunal"]
-            orgao = row["orgao_julgador"] or ""
-            relator = row["relator"] or ""
-            data = row["data_julgamento"] or ""
-            classe = row["classe_processual"] or ""
-            ementa = row["ementa"] or ""
+        if not row:
+            return None
 
-            # Formatar data
-            if data and len(data) >= 10:
-                partes = data.split("-")
-                if len(partes) == 3:
-                    data_fmt = f"{partes[2]}/{partes[1]}/{partes[0]}"
-                else:
-                    data_fmt = data
+        proc = row.get("numero_processo", "")
+        trib = row.get("tribunal", "")
+        orgao = row.get("orgao_julgador") or ""
+        relator = row.get("relator") or ""
+        data = row.get("data_julgamento") or ""
+        classe = row.get("classe_processual") or ""
+        ementa = row.get("ementa") or ""
+
+        # Formatar data
+        if data and len(data) >= 10:
+            partes = data.split("-")
+            if len(partes) == 3:
+                data_fmt = f"{partes[2]}/{partes[1]}/{partes[0]}"
             else:
                 data_fmt = data
+        else:
+            data_fmt = data
 
-            if formato == "petição":
-                # Formato ABNT jurídico
-                citacao = f'{trib}. {classe} nº {proc}. '
-                if relator:
-                    citacao += f'Rel. {relator}. '
-                if orgao:
-                    citacao += f'{orgao}. '
-                if data_fmt:
-                    citacao += f'Julgado em {data_fmt}.'
+        if formato == "petição":
+            # Formato ABNT jurídico
+            citacao = f'{trib}. {classe} nº {proc}. '
+            if relator:
+                citacao += f'Rel. {relator}. '
+            if orgao:
+                citacao += f'{orgao}. '
+            if data_fmt:
+                citacao += f'Julgado em {data_fmt}.'
 
-                if ementa:
-                    # Primeira frase da ementa como trecho
-                    primeira = ementa.split(".")[0] + "."
-                    if len(primeira) < 500:
-                        citacao += f'\n\nEmenta: "{primeira}"'
+            if ementa:
+                # Primeira frase da ementa como trecho
+                primeira = ementa.split(".")[0] + "."
+                if len(primeira) < 500:
+                    citacao += f'\n\nEmenta: "{primeira}"'
 
-                return citacao
-            else:
-                # Formato texto simples
-                return f"{classe} {proc} ({trib}, {orgao}, Rel. {relator}, j. {data_fmt})"
-
-        finally:
-            conn.close()
+            return citacao
+        else:
+            # Formato texto simples
+            return f"{classe} {proc} ({trib}, {orgao}, Rel. {relator}, j. {data_fmt})"
 
     def gerar_citacoes_tema(self, tema, tribunal=None, resultado="favoravel", limite=5):
         """
