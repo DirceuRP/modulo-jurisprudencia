@@ -2,6 +2,9 @@
 dados/*.csv
 dados/*.json
 dados/*.jsonl
+dados/pareceres/*.pdf
+dados/conitec_pcdt/*.pdf
+dados/natjus_pareceres/
 
 # Banco SQLite
 *.db
