@@ -1,10 +1,9 @@
 # Dados baixados (grandes)
-dados/*.csv
-dados/*.json
-dados/*.jsonl
-dados/pareceres/*.pdf
-dados/conitec_pcdt/*.pdf
-dados/natjus_pareceres/
+dados/
+*.pdf
+*.xlsx
+*.csv
+downloads/
 
 # Banco SQLite
 *.db
